@@ -7,8 +7,7 @@
 
 ![](https://img.shields.io/badge/cool-useless-green.svg)
 [![R-CMD-check](https://github.com/coolbutuseless/nanosvgr-dev/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/coolbutuseless/nanosvgr-dev/actions/workflows/R-CMD-check.yaml)
-[![CRAN
-status](https://www.r-pkg.org/badges/version/nanosvgr)](https://CRAN.R-project.org/package=nanosvgr)
+<!-- [![CRAN status](https://www.r-pkg.org/badges/version/nanosvgr)](https://CRAN.R-project.org/package=nanosvgr) -->
 <!-- badges: end -->
 
 `nanosvgr` reads SVG images as geometry constructed from cubic beziers
