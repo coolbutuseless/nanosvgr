@@ -1,0 +1,292 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = FALSE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+
+library(nanosvgr)
+library(dplyr)
+library(ggplot2)
+library(tibble)
+
+if (FALSE) {
+# Check for functions which do not have an @examples block for roxygen
+system("grep -c examples man/*Rd", intern = TRUE) |> 
+  grep(":0$", x = _, value = TRUE)
+}
+
+if (FALSE) {
+  covr::report(covr::package_coverage(
+    line_exclusions = list()
+  ))
+}
+
+if (FALSE) {
+  pkgdown::build_site(override = list(destination = "../coolbutuseless.github.io/package/nanosvgr"))
+}
+
+# Makevars options to do some deep testing for CRAN
+
+# Type conversions are sane
+# PKG_FLAG=-Wconversion
+
+# Pointer overflow checks i.e. dodgy pointer arithmetic
+# PKG_CFLAGS+=-fsanitize=pointer-overflow -fsanitize-trap=pointer-overflow
+# Then run in the debugger:
+# R -d lldb 
+# run
+# testthat::test_local()
+
+```
+
+# nanosvgr
+
+<!-- badges: start -->
+![](https://img.shields.io/badge/cool-useless-green.svg)
+[![CRAN](https://www.r-pkg.org/badges/version/nanosvgr)](https://CRAN.R-project.org/package=nanosvgr)
+[![R-CMD-check](https://github.com/coolbutuseless/nanosvgr-dev/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/coolbutuseless/nanosvgr-dev/actions/workflows/R-CMD-check.yaml)
+<!-- badges: end -->
+
+`nanosvgr` reads SVG  images as geometry constructed from cubic beziers
+using the [`nanosvg` C library](https://github.com/memononen/nanosvg).
+
+The beziers are further processed into polylines for easier manipulation
+and plotting.
+
+Possible future features
+
+* Implement bezier-to-lines conversion in C.
+* Add support for radial and linear gradients in `nsvg_to_grob()`. I'm unsure
+  that `nanosvg` library returns enough information to do this properly.
+  
+  
+Limitations:
+
+* `plot.nsvg()` does not respect radial/linear gradients
+* No support for SVG `<text>` in `nanosvg` library
+
+
+## Installation
+
+<!-- This package can be installed from CRAN -->
+
+<!-- ``` r -->
+<!-- install.packages('nanosvgr') -->
+<!-- ``` -->
+
+You can install the latest development version from
+[GitHub](https://github.com/coolbutuseless/nanosvgr) with:
+
+``` r
+# install.package('remotes')
+remotes::install_github('coolbutuseless/nanosvgr')
+```
+
+<!-- Pre-built source/binary versions can also be installed from -->
+<!-- [R-universe](https://r-universe.dev) -->
+
+<!-- ``` r -->
+<!-- install.packages('nanosvgr', repos = c('https://coolbutuseless.r-universe.dev', 'https://cloud.r-project.org')) -->
+<!-- ``` -->
+
+## `nsvg` object format
+
+An `nsvg` object read from an SVG file using `nsvg_read()` is simply a data.frame
+of geometric information and associated graphical parameters.
+
+* Each row of the `nsvg` data.frame is one *shape* in the SVG
+    * Each *shape* is made up of one-or-more *paths*
+        * Each *path* is made up of one-or-more *cubic beziers*
+            * Each *cubic bezier* is defined by 4 control points.
+
+The columns in the `nsvg` data.frame are as follows:
+
+* `shape_idx` - Shape index.  Each SVG is defined as a number of shapes, 
+        with each shape having a number of paths
+* `fill` - fill color
+* `stroke` - stroke color
+* `alpha` - opacity in range [0, 1]
+* `lwd` - line width
+* `linejoin`- Line join style.  'bevel', 'mitre' or 'round'
+* `lineend` - Line end style. 'round', 'butt', 'square'
+* `linemitre` - Line mitre limit
+* `linedash` - Raw list of line dash lengths for each shape
+* `fill_rule` - 'evenodd' or 'winding'
+* `fill_type` - 'flat', 'linear', 'radial', 'none', 'undef'
+* `gradient` - Radial or linear gradient information for this shape
+* `stroke_type` - 'flat', 'linear', 'radial', 'none', 'undef'
+* `beziers` - A list of data.frames - one data.frame for each
+        shape containing the coordinates of the bezier control points 
+        (Note: there are 4 control points for each cubic bezier).
+    * `path_idx` - Index of path within shape
+    * `bez_idx` - Index of bezier with path
+    * `closed` - Is the path closed?
+    * `x` - x coordinate of bezier control points
+    * `y` - y coordinate of bezier control points
+* `lty` - Line type. Either 'solid' or a string of up to 8 
+        characters (from c(1:9, "A":"F")) may be given, giving the length of 
+        line segments which are alternatively drawn and skipped.  See
+        `?graphics::par` for deails on Line Type Specification
+* `points` - A list of data.frames - one data.frame for each
+        shape containing the polylines derived from the beziers. Data is the 
+        same as `beziers` except the coordinates are for the polylines 
+        derived from the beziers
+
+
+## Reading an SVG
+
+```{r out.height=500, out.width=500, fig.height=13, fig.width=13, fig.asp=1}
+library(nanosvgr)
+library(tibble)
+
+nsvg <- nsvg_read("man/figures/tiger.svg")
+class(nsvg)
+# An 'nsvg' object consists of 
+#   * raw geometry for the shapes
+#   * graphical parameters e.g. fill color, stroke color etc
+names(nsvg)
+# The geometry data consists of a number of shapes.
+# Each shape consists of 1-or-more paths 
+# Each path may be open or closed (i.e. a line or a polygon)
+# Each path is defined by one or more beziers
+print(nsvg, width = Inf)
+# The beziers for each path are defined by 4 x-coordinates and 4 y-coordinates.
+# THe beziers for each path are collected in a list of data.frames in
+# the column "beziers"
+nsvg$beziers[[1]]
+```
+
+## Plotting with `nsvg`
+
+
+```{r out.height=500, out.width=500, fig.height=13, fig.width=13, fig.asp=1}
+nsvg <- nsvg_read("man/figures/tiger.svg")
+grid::grid.newpage(); plot(nsvg)
+```
+
+
+```{r out.height=500, out.width=500, fig.height=13, fig.width=13, fig.asp=1}
+nsvg <- nsvg_read("inst/gloves.svg") |> nsvg_invert_closedness()
+grid::grid.newpage(); plot(nsvg)
+```
+
+
+## Example of geometry manipulation
+
+As we now have access to the geometry of the SVG we can manipulate it
+prior to plotting.
+
+```{r}
+nsvg <- nsvg_read("man/figures/tiger.svg") |> nsvg_scale(0.3)
+nsvg <- nsvg_explode(nsvg, scale = 1.75)
+grid::grid.newpage(); plot(nsvg)
+```
+
+
+
+
+
+## Plotting with grid
+
+
+
+```{r out.height=500, out.width=500, fig.height=13, fig.width=13, fig.asp=1}
+library(nanosvgr)
+library(grid)
+
+nsvg   <-  nsvg_read("man/figures/tiger.svg")
+points <- nsvg_unnest_points(nsvg, gpars = TRUE)
+
+grid::grid.newpage()
+dfs <- split(points, points$shape_idx)
+for (i in seq_along(dfs)) {
+  df <- dfs[[i]]
+  if (df$closed[1]) {
+    grid.polygon(df$x, df$y, 
+                 default.units = 'points', 
+                 gp = gpar(col = nsvg$stroke[i], fill = nsvg$fill[i]))
+  } else {
+    grid.polyline(df$x, df$y, 
+                 default.units = 'points', 
+                 gp = gpar(col = nsvg$stroke[i], fill = nsvg$fill[i]))
+  }
+}
+```
+
+## Plotting with ggplot
+
+```{r}
+library(nanosvgr)
+library(ggplot2)
+
+nsvg   <-  nsvg_read("man/figures/tiger.svg")
+points <- nsvg_unnest_points(nsvg, gpars = TRUE)
+dfs    <- split(points, points$shape_idx)
+
+p <- ggplot(points)
+
+for (i in seq_along(dfs)) {
+  df <- dfs[[i]]
+  if (df$closed[1]) {
+    p <- p + geom_polygon(data = df, aes(x, y, group = shape_idx, fill = I(fill), col = I(stroke), linewidth = I(lwd)))
+
+  } else {
+    p <- p + geom_path(data = df, aes(x, y, group = shape_idx, col = I(stroke)))
+  }
+}
+
+p + 
+  theme_bw() + 
+  coord_equal()
+```
+
+
+## Plotting raw beziers with `{ggforce}`
+
+```{r}
+library(nanosvgr)
+library(ggplot2)
+library(ggforce)
+
+nsvg    <- nsvg_read("man/figures/tiger.svg")
+beziers <- nsvg_unnest_beziers(nsvg)
+
+ggplot(beziers) +
+  geom_bezier(aes(x, y, group = interaction(shape_idx, path_idx, bez_idx), color = as.factor(shape_idx))) +
+  labs(
+    title = "ggplot2 + ggforce::geom_bezier()"
+  ) +
+  theme_bw() +
+  coord_equal() +
+  theme(legend.position = 'none')
+```
+
+
+## Plotting raw beziers with `grid.bezier()`
+
+```{r out.height=500, out.width=500, fig.height=13, fig.width=13, fig.asp=1}
+library(nanosvgr)
+library(grid)
+
+nsvg    <- nsvg_read("man/figures/tiger.svg")
+beziers <- nsvg_unnest_beziers(nsvg)
+beziers <- split(beziers, with(beziers, interaction(shape_idx, path_idx, bez_idx, drop = TRUE)))
+
+grid.newpage()
+for (bezier in beziers) {
+  grid.bezier(bezier$x, bezier$y, default.units = 'points')
+}
+```
+
+
+
+
+

@@ -1,0 +1,23 @@
+Package: nanosvgr
+Type: Package
+Title: Read 'SVG' as Geometric Data
+Version: 0.1.0
+Authors@R: c(
+    person("Mike", "Cheng", role = c("aut", "cre", 'cph'), email = "mikefc@coolbutuseless.com")
+    )
+Maintainer: Mike Cheng <mikefc@coolbutuseless.com>
+URL: https://github.com/coolbutuseless/nanosvgr
+BugReports: https://github.com/coolbutuseless/nanosvgr/issues
+Description: Parse SVG to bezier curves, lines and associated graphical 
+    parameters.  This enables the manipulation of the raw SVG data and 
+    custom plotting techniques.
+License: MIT + file LICENSE
+Copyright: The included 'nanosvg' code is Copyright (c) (c) 2013-14 Mikko Mononen memon@inside.org. See 'COPYRIGHTS' for LICENSE for included code.
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.3.3
+LinkingTo:
+  colorfast
+Depends:
+    R (>= 4.1.0),
+    colorfast
