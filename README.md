@@ -10,23 +10,8 @@
 <!-- [![CRAN status](https://www.r-pkg.org/badges/version/nanosvgr)](https://CRAN.R-project.org/package=nanosvgr) -->
 <!-- badges: end -->
 
-`nanosvgr` reads SVG images as geometry constructed from cubic beziers
-using the [`nanosvg` C library](https://github.com/memononen/nanosvg).
-
-The beziers are further processed into polylines for easier manipulation
-and plotting.
-
-Possible future features
-
-- Implement bezier-to-lines conversion in C.
-- Add support for radial and linear gradients in `nsvg_to_grob()`. I’m
-  unsure that `nanosvg` library returns enough information to do this
-  properly.
-
-Limitations:
-
-- `plot.nsvg()` does not respect radial/linear gradients
-- No support for SVG `<text>` in `nanosvg` library
+`nanosvgr` reads SVG images as polygons using the [`nanosvg` C
+library](https://github.com/memononen/nanosvg).
 
 ## Installation
 
@@ -56,10 +41,11 @@ remotes::install_github('coolbutuseless/nanosvgr')
 
 <!-- ``` -->
 
-## `nsvg` object format
+## `nsvg` data.frame format
 
 An `nsvg` object read from an SVG file using `nsvg_read()` is simply a
-data.frame of geometric information and associated graphical parameters.
+data.frame of polygon/bezier information and associated graphical
+parameters.
 
 - Each row of the `nsvg` data.frame is one *shape* in the SVG
   - Each *shape* is made up of one-or-more *paths*
@@ -95,9 +81,20 @@ The columns in the `nsvg` data.frame are as follows:
   segments which are alternatively drawn and skipped. See
   `?graphics::par` for deails on Line Type Specification
 - `points` - A list of data.frames - one data.frame for each shape
-  containing the polylines derived from the beziers. Data is the same as
-  `beziers` except the coordinates are for the polylines derived from
-  the beziers
+  containing the polygons/polylines derived from the beziers. Data
+  format is the same as `beziers` except the coordinates are for the
+  polygons derived from the beziers
+
+Possible future features
+
+- Add support for radial and linear gradients in `nsvg_to_grob()`. I’m
+  unsure that `nanosvg` library returns enough information to do this
+  properly.
+
+Limitations:
+
+- `plot.nsvg()` does not respect radial/linear gradients
+- No support for SVG `<text>` in `nanosvg` library
 
 ## Reading an SVG
 

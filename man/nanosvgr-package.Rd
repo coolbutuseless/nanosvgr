@@ -4,9 +4,9 @@
 \name{nanosvgr-package}
 \alias{nanosvgr}
 \alias{nanosvgr-package}
-\title{nanosvgr: Read 'SVG' as Geometric Data}
+\title{nanosvgr: Read 'SVG' as Polygons}
 \description{
-Parse SVG to bezier curves, lines and associated graphical parameters. This enables the manipulation of the raw SVG data and custom plotting techniques.
+Parse SVG to polygons, bezier curves, lines and associated graphical parameters. This enables the manipulation of the raw SVG data and custom plotting techniques.
 }
 \seealso{
 Useful links:
