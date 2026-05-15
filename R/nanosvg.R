@@ -42,7 +42,7 @@ linedash_to_lty <- function(linedash) {
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #' Read an SVG as geometry
 #' 
-#' @param filename SVG filename
+#' @param filename SVG filename or a text-mode connection open on SVG data
 #' @param n number of points to use when converting each bezier to a polyline.
 #'        Default: 20.  Use "NA" to indicate that no conversion should be done.
 #' @param units units to use. Default 'px'.  One of 'px', 'pt', 'pc' 'mm', 'cm', or 'in'
@@ -109,8 +109,13 @@ linedash_to_lty <- function(linedash) {
 #' @export
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 nsvg_read <- function(filename, n = 20, units = 'px', dpi = 96) {
-  filename <- normalizePath(filename, mustWork = TRUE)
-  nsvg <- .Call(nsvg_read_, filename, units, dpi)
+  if (inherits(filename, "connection")) {
+    svg_string <- paste(readLines(filename, warn = FALSE), collapse = "\n")
+    nsvg <- .Call(nsvg_parse_, svg_string, units, dpi)
+  } else {
+    filename <- normalizePath(filename, mustWork = TRUE)
+    nsvg <- .Call(nsvg_read_, filename, units, dpi)
+  }
   
   nsvg$lty <- vapply(nsvg$linedash, linedash_to_lty, character(1))
   

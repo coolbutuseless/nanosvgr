@@ -3,11 +3,13 @@
 #include <R.h>
 #include <Rinternals.h>
 
-extern SEXP nsvg_read_(SEXP filename_, SEXP units_, SEXP dpi_);
+extern SEXP nsvg_read_ (SEXP filename_, SEXP units_, SEXP dpi_);
+extern SEXP nsvg_parse_(SEXP input_,    SEXP units_, SEXP dpi_);
 
 static const R_CallMethodDef CEntries[] = {
 
-  {"nsvg_read_", (DL_FUNC) &nsvg_read_, 3},
+  {"nsvg_read_" , (DL_FUNC) &nsvg_read_ , 3},
+  {"nsvg_parse_", (DL_FUNC) &nsvg_parse_, 3},
   {NULL , NULL, 0}
 };
 
