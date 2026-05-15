@@ -20,32 +20,14 @@
 #include "nanosvg.h"
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Read SVG as beziers
+// Convert a parsed NSVGimage into an R list/data.frame
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-SEXP nsvg_read_(SEXP filename_, SEXP units_, SEXP dpi_) {
-  
+static SEXP nsvg_image_to_sexp(struct NSVGimage* image) {
+
   int nprotect = 0;
-  
-  const char *filename = CHAR(STRING_ELT(filename_, 0));
-  filename = (char *)R_ExpandFileName(filename);
-  if (access(filename, R_OK) != 0) {
-    Rf_error("nsvg_read_(): Cannot read from file '%s'", filename);
-  }
-  
-  float dpi = (float)Rf_asReal(dpi_);
-  const char *units = CHAR(STRING_ELT(units_, 0));
-  
-  
-  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  // Parse the SVG into beziers
-  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  struct NSVGimage* image;
+
   struct NSVGshape *shape;
   struct NSVGpath  *path;
-  image = nsvgParseFromFile(filename, units, dpi);
-  if (image == NULL) {
-    Rf_error("nsvg_read_(): Could not parse SVG data from '%s'", filename);
-  }
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   // Count the number of beziers
@@ -381,8 +363,56 @@ SEXP nsvg_read_(SEXP filename_, SEXP units_, SEXP dpi_) {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   // Tidy and return
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  nsvgDelete(image);
   UNPROTECT(nprotect);
+  return res_;
+}
+
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Read SVG from file
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+SEXP nsvg_read_(SEXP filename_, SEXP units_, SEXP dpi_) {
+
+  const char *filename = CHAR(STRING_ELT(filename_, 0));
+  filename = (char *)R_ExpandFileName(filename);
+  if (access(filename, R_OK) != 0) {
+    Rf_error("nsvg_read_(): Cannot read from file '%s'", filename);
+  }
+
+  float dpi = (float)Rf_asReal(dpi_);
+  const char *units = CHAR(STRING_ELT(units_, 0));
+
+  struct NSVGimage* image = nsvgParseFromFile(filename, units, dpi);
+  if (image == NULL) {
+    Rf_error("nsvg_read_(): Could not parse SVG data from '%s'", filename);
+  }
+
+  SEXP res_ = nsvg_image_to_sexp(image);
+  nsvgDelete(image);
+  return res_;
+}
+
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Parse SVG from a string
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+SEXP nsvg_parse_(SEXP input_, SEXP units_, SEXP dpi_) {
+
+  float dpi = (float)Rf_asReal(dpi_);
+  const char *units = CHAR(STRING_ELT(units_, 0));
+
+  // nsvgParse() modifies its input in-place, so pass a mutable copy
+  const char *input_str = CHAR(STRING_ELT(input_, 0));
+  char *input_copy = (char *)R_alloc(strlen(input_str) + 1, 1);
+  strcpy(input_copy, input_str);
+
+  struct NSVGimage* image = nsvgParse(input_copy, units, dpi);
+  if (image == NULL) {
+    Rf_error("nsvg_parse_(): Could not parse SVG data from string");
+  }
+
+  SEXP res_ = nsvg_image_to_sexp(image);
+  nsvgDelete(image);
   return res_;
 }
 
